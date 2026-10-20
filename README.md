@@ -279,3 +279,17 @@ https://github.com/eduribnev
 If you find this project useful, consider giving it a star.
 
 Your support helps improve the project and encourages further development.
+
+## 🐳 Docker Support
+
+Build the image:
+
+```bash
+docker build -t api-sentinel .
+```
+
+Run the scanner:
+
+```bash
+docker run -it api-sentinel
+```
