@@ -5,6 +5,7 @@ from core.requester import APIRequester
 from scanners.headers_scanner import SecurityHeadersScanner
 from scanners.bola_scanner import BOLAandDataLeakScanner
 from reports.generator import ReportGenerator
+from reports.html_generator import generate_html_report
 
 init(autoreset=True)
 
@@ -54,8 +55,15 @@ def main():
         # 3. Gerando Relatório Markdown
         reporter = ReportGenerator(target_url, header_findings, bola_findings)
         report_file = reporter.generate_markdown("relatorio_seguranca.md")
+
+        html_report = generate_html_report(
+            target_url,
+            header_findings,
+            bola_findings
+        )
         
-        print(Fore.MAGENTA + f"\n[📄] Relatório detalhado gerado com sucesso: {report_file}")
+        print(Fore.MAGENTA + f"\n[📄] Markdown Report: {report_file}")
+        print(Fore.MAGENTA + f"[🌐] HTML Report: {html_report}")
         print(Fore.GREEN + "[✔] Varredura e exportação concluídas com sucesso!")
     else:
         print(Fore.RED + "[-] Falha ao conectar ao alvo. Verifique se o servidor está rodando.")

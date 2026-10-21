@@ -1,8 +1,8 @@
 # 🛡️ Relatório de Varredura - API Sentinel Scanner
 
-**Alvo Analisado:** `http://127.0.0.1:5000`  
-**Data da Análise:** `2026-08-03 20:06:24`  
-**Ferramenta:** API Sentinel Scanner v1.0  
+**Alvo Analisado:** `http://127.0.0.1:5000`
+**Data da Análise:** `2026-10-20 21:15:02`
+**Ferramenta:** API Sentinel Scanner v1.0
 
 ---
 
