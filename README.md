@@ -162,6 +162,35 @@ After the scan completes, a Markdown report will be generated:
 relatorio_seguranca.md
 ```
 
+To scan a specific API URL, pass it with `--url`:
+
+```bash
+python main.py --url http://127.0.0.1:5000
+```
+
+---
+
+## Sample HTML Report
+
+The scanner also generates an HTML report named `security_report.html`. The report includes an executive summary, findings by severity, and detailed security header and authorization/data exposure findings.
+
+![Sample API Sentinel HTML report](docs/report-preview.png)
+
+### Security Score
+
+The Security Score starts at 100 and is reduced according to the severity and number of findings. Critical findings deduct 15 points each, high findings 5 points, medium findings 3 points, and low findings 1 point. The score cannot go below 0.
+
+### Risk Level
+
+The Risk Level is calculated from the Security Score:
+
+| Score | Risk Level |
+|------:|------------|
+| 80–100 | LOW |
+| 60–79 | MEDIUM |
+| 40–59 | HIGH |
+| 0–39 | CRITICAL |
+
 ---
 
 # 📊 Sample Findings
