@@ -1,4 +1,232 @@
 from datetime import datetime
+from html import escape
+
+
+_SEVERITY_WEIGHTS = {
+    "critical": 15,
+    "high": 5,
+    "medium": 3,
+    "low": 1,
+}
+
+_STYLES = """
+body {
+    margin: 0;
+    padding: 24px;
+    background: #f4f4f4;
+    color: #1e293b;
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+    background: #fff;
+    border-radius: 12px;
+}
+
+h1, h2 {
+    color: #1e293b;
+}
+
+.metadata {
+    color: #475569;
+    overflow-wrap: anywhere;
+}
+
+.score {
+    color: #0f172a;
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.risk-level {
+    font-weight: bold;
+}
+
+.risk-low {
+    color: #16a34a;
+}
+
+.risk-medium {
+    color: #a16207;
+}
+
+.risk-high {
+    color: #ea580c;
+}
+
+.risk-critical {
+    color: #dc2626;
+}
+
+.summary-box {
+    margin: 20px 0 25px;
+    padding: 15px;
+    background: #f8fafc;
+    border-left: 5px solid #1e293b;
+    border-radius: 8px;
+}
+
+.summary-box h2 {
+    margin-top: 0;
+}
+
+.summary-box p {
+    line-height: 1.6;
+}
+
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.card {
+    min-width: 120px;
+    padding: 15px;
+    border-radius: 8px;
+    color: #fff;
+    text-align: center;
+}
+
+.card h3 {
+    margin: 0 0 8px;
+}
+
+.critical {
+    background: #dc2626;
+}
+
+.high {
+    background: #f97316;
+}
+
+.medium {
+    background: #eab308;
+    color: #111827;
+}
+
+.low {
+    background: #16a34a;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background: #1e293b;
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    body {
+        padding: 12px;
+    }
+
+    .container {
+        padding: 18px;
+    }
+}
+"""
+
+
+def _normalize_severity(severity):
+    normalized = str(severity).strip().casefold()
+
+    if normalized in {"critical", "crítica", "critica"}:
+        return "critical"
+    if normalized in {"high", "alta", "média/alta", "media/alta"}:
+        return "high"
+    if normalized in {"medium", "média", "media"}:
+        return "medium"
+    return "low"
+
+
+def _calculate_findings_counts(header_findings, bola_findings):
+    counts = {
+        "critical": len(bola_findings),
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+    }
+
+    for finding in header_findings:
+        severity = _normalize_severity(finding["severity"])
+        counts[severity] += 1
+
+    return counts
+
+
+def _calculate_security_score(counts):
+    deductions = sum(
+        counts[severity] * weight
+        for severity, weight in _SEVERITY_WEIGHTS.items()
+    )
+    return max(0, 100 - deductions)
+
+
+def _get_risk_level(score):
+    if score >= 80:
+        return "LOW"
+    if score >= 60:
+        return "MEDIUM"
+    if score >= 40:
+        return "HIGH"
+    return "CRITICAL"
+
+
+def _render_header_rows(header_findings):
+    if not header_findings:
+        return '<tr><td colspan="3">No header findings.</td></tr>'
+
+    rows = []
+    for finding in header_findings:
+        rows.append(
+            "<tr>"
+            f"<td>{escape(str(finding['severity']))}</td>"
+            f"<td>{escape(str(finding['header']))}</td>"
+            f"<td>{escape(str(finding['status']))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def _render_data_exposure_rows(bola_findings):
+    if not bola_findings:
+        return (
+            '<tr><td colspan="4">'
+            "No authorization or data exposure findings."
+            "</td></tr>"
+        )
+
+    rows = []
+    for finding in bola_findings:
+        status_code = finding.get("status_code", "N/A")
+        rows.append(
+            "<tr>"
+            f"<td>{escape(str(finding['endpoint']))}</td>"
+            f"<td>{escape(str(status_code))}</td>"
+            "<td>Critical</td>"
+            f"<td>{escape(str(finding['detail']))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
 
 
 def generate_html_report(
@@ -7,248 +235,98 @@ def generate_html_report(
     bola_findings,
     output_file="security_report.html",
 ):
-    critical = len(bola_findings)
-    high = 0
-    medium = 0
-    low = 0
-
-    for item in header_findings:
-        if item["severity"] == "Média/Alta":
-            high += 1
-        elif item["severity"] == "Média":
-            medium += 1
-        else:
-            low += 1
-
-    score = max(0, 100 - (critical * 15) - (high * 5) - (medium * 3) - (low * 1))
-
-    if score >= 80:
-        risk_level = "LOW"
-
-    elif score >= 60:
-        risk_level = "MEDIUM"
-
-    elif score >= 40:
-        risk_level = "HIGH"
-
-    else:
-        risk_level = "CRITICAL"
-
+    counts = _calculate_findings_counts(header_findings, bola_findings)
+    score = _calculate_security_score(counts)
+    risk_level = _get_risk_level(score)
     risk_class = f"risk-{risk_level.lower()}"
+    total_findings = sum(counts.values())
+    generated_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    html = f"""
-<!DOCTYPE html>
-<html>
+    html = f"""<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-
-<title>API Sentinel Report</title>
-
-<style>
-
-body {{
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-    padding: 20px;
-}}
-
-.container {{
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 1200px;
-    margin: auto;
-}}
-
-h1 {{
-    color: #1e293b;
-}}
-
-.summary {{
-    display: flex;
-    gap: 20px;
-    margin-bottom: 30px;
-}}
-
-.card {{
-    padding: 15px;
-    border-radius: 8px;
-    color: white;
-    min-width: 120px;
-    text-align: center;
-}}
-
-.critical {{
-    background: #dc2626;
-}}
-
-.high {{
-    background: #f97316;
-}}
-
-.medium {{
-    background: #eab308;
-    color: black;
-}}
-
-.low {{
-    background: #22c55e;
-}}
-
-.score {{
-    font-size: 36px;
-    font-weight: bold;
-    color: #0f172a;
-}}
-
-table {{
-    width: 100%;
-    border-collapse: collapse;
-}}
-
-th, td {{
-    border: 1px solid #ddd;
-    padding: 12px;
-}}
-
-th {{
-    background: #1e293b;
-    color: white;
-}}
-
-.risk-low {{
-    color: #22c55e;
-    font-weight: bold;
-}}
-
-.risk-medium {{
-    color: #eab308;
-    font-weight: bold;
-}}
-
-.risk-high {{
-    color: #f97316;
-    font-weight: bold;
-}}
-
-.risk-critical {{
-    color: #dc2626;
-    font-weight: bold;
-}}
-
-</style>
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>API Sentinel Security Report</title>
+    <style>{_STYLES}</style>
 </head>
 <body>
+    <main class="container">
+        <h1>API Sentinel Scanner</h1>
+        <p class="metadata"><strong>Target:</strong> {escape(str(target_url))}</p>
+        <p class="metadata"><strong>Generated on:</strong> {escape(generated_at)}</p>
 
-<div class="container">
+        <section aria-labelledby="score-heading">
+            <h2 id="score-heading">Security Score</h2>
+            <div class="score">{score}/100</div>
+            <h3>
+                Risk Level:
+                <span class="risk-level {risk_class}">{risk_level}</span>
+            </h3>
+        </section>
 
-<h1>🛡 API Sentinel Scanner</h1>
+        <section class="summary-box" aria-labelledby="executive-summary-heading">
+            <h2 id="executive-summary-heading">Executive Summary</h2>
+            <p>
+                The assessment identified {total_findings} security findings:
+                {counts['critical']} critical, {counts['high']} high,
+                {counts['medium']} medium, and {counts['low']} low.
+                The overall security posture is classified as {risk_level} risk.
+            </p>
+        </section>
 
-<p>
-Generated on: {datetime.now()}
-</p>
+        <section class="summary" aria-label="Findings by severity">
+            <div class="card critical"><h3>{counts['critical']}</h3>Critical</div>
+            <div class="card high"><h3>{counts['high']}</h3>High</div>
+            <div class="card medium"><h3>{counts['medium']}</h3>Medium</div>
+            <div class="card low"><h3>{counts['low']}</h3>Low</div>
+        </section>
 
-<h2>Security Score</h2>
+        <section aria-labelledby="header-findings-heading">
+            <h2 id="header-findings-heading">Security Header Findings</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Severity</th>
+                            <th scope="col">Finding</th>
+                            <th scope="col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {_render_header_rows(header_findings)}
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-<div class="score">{score}/100</div>
-
-<h3>
-    Risk Level:
-    <span class="{risk_class}">
-        {risk_level}
-    </span>
-</h3>
-
-<div class="card">
-
-<h2>Executive Summary</h2>
-
-<p>
-The API Sentinel Scanner identified security weaknesses that should
-be addressed to improve the security posture of the assessed API.
-The findings include configuration issues, missing security headers
-and potential authorization weaknesses.
-</p>
-
-</div>
-
-<div class="summary">
-
-<div class="card critical">
-<h3>{critical}</h3>
-Critical
-</div>
-
-<div class="card high">
-<h3>{high}</h3>
-High
-</div>
-
-<div class="card medium">
-<h3>{medium}</h3>
-Medium
-</div>
-
-<div class="card low">
-<h3>{low}</h3>
-Low
-</div>
-
-</div>
-
-<h2>Findings</h2>
-
-<table>
-<tr>
-<th>Severity</th>
-<th>Finding</th>
-<th>Description</th>
-</tr>
+        <section aria-labelledby="data-exposure-heading">
+            <h2 id="data-exposure-heading">
+                Authorization &amp; Data Exposure Findings
+            </h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Endpoint</th>
+                            <th scope="col">HTTP Status</th>
+                            <th scope="col">Severity</th>
+                            <th scope="col">Finding</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {_render_data_exposure_rows(bola_findings)}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
 """
 
-    for item in header_findings:
-        html += f"""
-<tr>
-<td>{item['severity']}</td>
-<td>{item['header']}</td>
-<td>{item['status']}</td>
-</tr>
-"""
-
-    html += """
-    </table>
-
-    <h2>Authorization & Data Exposure Findings</h2>
-
-    <table>
-    <tr>
-        <th>Endpoint</th>
-        <th>Status</th>
-        <th>Finding</th>
-    </tr>
-    """
-
-    for item in bola_findings:
-
-        html += f"""
-        <tr>
-            <td>{item['endpoint']}</td>
-            <td>Critical</td>
-            <td>{item['detail']}</td>
-        </tr>
-        """
-
-    html += """
-    </table>
-
-    </div>
-    </body>
-    </html>
-    """
-
-    with open(output_file, "w", encoding="utf-8") as file:
-        file.write(html)
+    with open(output_file, "w", encoding="utf-8") as report_file:
+        report_file.write(html)
 
     print(f"[+] HTML Report saved: {output_file}")
     return output_file
