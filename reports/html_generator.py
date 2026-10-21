@@ -20,14 +20,21 @@ def generate_html_report(
         else:
             low += 1
 
-    score = max(
-    0,
-    100
-    - (critical * 15)
-    - (high * 5)
-    - (medium * 3)
-    - (low * 1)
-)
+    score = max(0, 100 - (critical * 15) - (high * 5) - (medium * 3) - (low * 1))
+
+    if score >= 80:
+        risk_level = "LOW"
+
+    elif score >= 60:
+        risk_level = "MEDIUM"
+
+    elif score >= 40:
+        risk_level = "HIGH"
+
+    else:
+        risk_level = "CRITICAL"
+
+    risk_class = f"risk-{risk_level.lower()}"
 
     html = f"""
 <!DOCTYPE html>
@@ -109,6 +116,26 @@ th {{
     color: white;
 }}
 
+.risk-low {{
+    color: #22c55e;
+    font-weight: bold;
+}}
+
+.risk-medium {{
+    color: #eab308;
+    font-weight: bold;
+}}
+
+.risk-high {{
+    color: #f97316;
+    font-weight: bold;
+}}
+
+.risk-critical {{
+    color: #dc2626;
+    font-weight: bold;
+}}
+
 </style>
 
 </head>
@@ -125,6 +152,13 @@ Generated on: {datetime.now()}
 <h2>Security Score</h2>
 
 <div class="score">{score}/100</div>
+
+<h3>
+    Risk Level:
+    <span class="{risk_class}">
+        {risk_level}
+    </span>
+</h3>
 
 <div class="card">
 

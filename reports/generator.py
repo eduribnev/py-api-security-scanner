@@ -1,5 +1,6 @@
 import datetime
 
+
 class ReportGenerator:
     def __init__(self, target_url, header_findings, bola_findings):
         self.target_url = target_url
@@ -33,7 +34,9 @@ class ReportGenerator:
         content += "\n---\n\n## 2. Varredura BOLA e Vazamento de Dados\n\n"
 
         if self.bola_findings:
-            content += "| Endpoint Analisado | Status HTTP | Alerta / Dados Expostos |\n"
+            content += (
+                "| Endpoint Analisado | Status HTTP | Alerta / Dados Expostos |\n"
+            )
             content += "| :--- | :--- | :--- |\n"
 
             for item in self.bola_findings:
@@ -42,7 +45,9 @@ class ReportGenerator:
         else:
             content += "Nenhuma falha de autorização ou vazamento detectado.\n"
 
-        content += "\n---\n*Relatório gerado automaticamente pelo API Sentinel Scanner.*"
+        content += (
+            "\n---\n*Relatório gerado automaticamente pelo API Sentinel Scanner.*"
+        )
 
         with open(filename, "w", encoding="utf-8") as f:
             f.write(content)
