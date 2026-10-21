@@ -1,0 +1,39 @@
+# Virtual Environment
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Generated reports
+security_report.html
+relatorio_seguranca.md
+
+# Future reports folder
+outputs/
+reports_output/
+
+# Test and coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Environment files
+.env
+.env.local
+
+# Logs
+*.log
