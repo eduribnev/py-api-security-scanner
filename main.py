@@ -8,6 +8,7 @@ from scanners.bola_scanner import BOLAandDataLeakScanner
 from reports.generator import ReportGenerator
 from reports.html_generator import generate_html_report
 from reports.json_generator import generate_json_report
+from core.openapi_parser import extract_operations, load_openapi_json
 
 init(autoreset=True)
 
@@ -27,6 +28,10 @@ def get_arguments():
     parser = argparse.ArgumentParser(description="API Sentinel Scanner")
 
     parser.add_argument("--url", help="Target API base URL")
+    parser.add_argument(
+        "--openapi",
+        help="Path to an OpenAPI or Swagger specification in JSON format",
+    )
 
     return parser.parse_args()
 
@@ -35,6 +40,23 @@ def main():
     print_banner()
 
     args = get_arguments()
+
+    if args.openapi:
+        try:
+            spec = load_openapi_json(args.openapi)
+            operations = extract_operations(spec)
+        except (OSError, ValueError) as error:
+            print(Fore.RED + f"[-] Não foi possível carregar a especificação: {error}")
+            sys.exit(2)
+
+        if not operations:
+            print(Fore.YELLOW + "[!] Nenhuma operação encontrada na especificação.")
+            return
+
+        print(Fore.CYAN + "[*] Operações encontradas na especificação OpenAPI:")
+        for operation in operations:
+            print(f"{operation['method']} {operation['path']}")
+        return
 
     if args.url:
 
