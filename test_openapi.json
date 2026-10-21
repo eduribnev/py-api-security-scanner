@@ -1,0 +1,38 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "API Sentinel Test API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/status": {
+      "get": {
+        "summary": "Status endpoint"
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "summary": "List users"
+      },
+      "post": {
+        "summary": "Create user"
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "summary": "Get user by ID"
+      },
+      "put": {
+        "summary": "Update user"
+      },
+      "delete": {
+        "summary": "Delete user"
+      }
+    },
+    "/api/v1/products": {
+      "get": {
+        "summary": "List products"
+      }
+    }
+  }
+}
