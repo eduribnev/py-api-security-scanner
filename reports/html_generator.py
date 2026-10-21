@@ -5,22 +5,29 @@ def generate_html_report(
     target_url,
     header_findings,
     bola_findings,
-    output_file="security_report.html"
+    output_file="security_report.html",
 ):
+    critical = len(bola_findings)
+    high = 0
+    medium = 0
+    low = 0
 
-    critical = sum(1 for f in header_findings if f["severity"] == "Critical")
-    high = sum(1 for f in header_findings if f["severity"] == "High")
-    medium = sum(1 for f in header_findings if f["severity"] == "Medium")
-    low = sum(1 for f in header_findings if f["severity"] == "Low")
+    for item in header_findings:
+        if item["severity"] == "Média/Alta":
+            high += 1
+        elif item["severity"] == "Média":
+            medium += 1
+        else:
+            low += 1
 
     score = max(
-        0,
-        100
-        - (critical * 25)
-        - (high * 15)
-        - (medium * 8)
-        - (low * 3)
-    )
+    0,
+    100
+    - (critical * 15)
+    - (high * 5)
+    - (medium * 3)
+    - (low * 1)
+)
 
     html = f"""
 <!DOCTYPE html>
@@ -172,16 +179,39 @@ Low
 <td>{item['severity']}</td>
 <td>{item['header']}</td>
 <td>{item['status']}</td>
-
 </tr>
 """
 
     html += """
-</table>
-</div>
-</body>
-</html>
-"""
+    </table>
+
+    <h2>Authorization & Data Exposure Findings</h2>
+
+    <table>
+    <tr>
+        <th>Endpoint</th>
+        <th>Status</th>
+        <th>Finding</th>
+    </tr>
+    """
+
+    for item in bola_findings:
+
+        html += f"""
+        <tr>
+            <td>{item['endpoint']}</td>
+            <td>Critical</td>
+            <td>{item['detail']}</td>
+        </tr>
+        """
+
+    html += """
+    </table>
+
+    </div>
+    </body>
+    </html>
+    """
 
     with open(output_file, "w", encoding="utf-8") as file:
         file.write(html)
