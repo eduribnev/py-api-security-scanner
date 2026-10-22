@@ -21,10 +21,11 @@ class SecurityHeadersScanner:
             print(
                 Fore.RED + "[-] Não foi possível realizar a requisição de cabeçalhos."
             )
-            return
+            return []
 
         headers = response.headers
         issues_found = 0
+        findings = []
 
         # Verificação de cabeçalhos ausentes
         for header in self.recommended_headers:
@@ -34,6 +35,14 @@ class SecurityHeadersScanner:
                     + f"[!] AVISO: Cabeçalho de segurança ausente: '{header}'"
                 )
                 issues_found += 1
+                findings.append(
+                    {
+                        "header": header,
+                        "status": "Ausente",
+                        "severity": "Média/Alta",
+                        "endpoint": endpoint,
+                    }
+                )
             else:
                 print(Fore.GREEN + f"[+] Cabeçalho encontrado: '{header}'")
 
@@ -45,6 +54,14 @@ class SecurityHeadersScanner:
                 + "[!] VULNERABILIDADE CRÍTICA: CORS permissivo detectado (Access-Control-Allow-Origin: *)"
             )
             issues_found += 1
+            findings.append(
+                {
+                    "header": "Access-Control-Allow-Origin",
+                    "status": "Permissivo (*)",
+                    "severity": "Crítica",
+                    "endpoint": endpoint,
+                }
+            )
 
         if issues_found == 0:
             print(Fore.GREEN + "[+] Nenhum problema evidente detectado nos cabeçalhos.")
@@ -53,3 +70,5 @@ class SecurityHeadersScanner:
                 Fore.RED
                 + f"[-] Total de potenciais falhas de cabeçalho: {issues_found}"
             )
+
+        return findings

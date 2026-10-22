@@ -168,6 +168,17 @@ To scan a specific API URL, pass it with `--url`:
 python main.py --url http://127.0.0.1:5000
 ```
 
+To scan the static GET endpoints from an OpenAPI JSON specification, pass both
+the target base URL and the specification file:
+
+```bash
+python main.py --url http://127.0.0.1:5000 --openapi test_openapi.json
+```
+
+Parameterized paths (for example, `/users/{id}`) and non-GET operations are
+excluded from the security headers scan. Passing only `--openapi` lists the
+discovered operations without sending requests.
+
 ---
 
 ## Sample HTML Report
