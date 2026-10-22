@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 _HTTP_METHODS = {
     "get",
@@ -22,6 +24,32 @@ def load_openapi_json(filepath: str | Path) -> dict[str, Any]:
 
     if not isinstance(spec, dict):
         raise ValueError("The OpenAPI JSON document must contain a JSON object.")
+
+    return spec
+
+
+def load_openapi_document(filepath: str | Path) -> dict[str, Any]:
+    """Load an OpenAPI or Swagger document from JSON or YAML."""
+    path = Path(filepath)
+    extension = path.suffix.lower()
+
+    if extension == ".json":
+        return load_openapi_json(path)
+
+    if extension not in {".yaml", ".yml"}:
+        raise ValueError(
+            f"Unsupported OpenAPI file extension '{path.suffix}'. "
+            "Supported extensions are .json, .yaml, and .yml."
+        )
+
+    try:
+        with path.open(encoding="utf-8") as spec_file:
+            spec = yaml.safe_load(spec_file)
+    except yaml.YAMLError as error:
+        raise ValueError(f"Invalid OpenAPI YAML document: {error}") from error
+
+    if not isinstance(spec, dict):
+        raise ValueError("The OpenAPI YAML document must contain a YAML mapping.")
 
     return spec
 
