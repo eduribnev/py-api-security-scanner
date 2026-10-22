@@ -175,9 +175,11 @@ the target base URL and the specification file:
 python main.py --url http://127.0.0.1:5000 --openapi test_openapi.json
 ```
 
-Parameterized paths (for example, `/users/{id}`) and non-GET operations are
-excluded from the security headers scan. Passing only `--openapi` lists the
-discovered operations without sending requests.
+Parameterized paths and non-GET operations are excluded from the security
+headers scan. Passing only `--openapi` lists the discovered operations and
+potential BOLA candidates without sending requests. Candidate detection
+recognizes `{id}`, `{userId}`, `{accountId}`, and `{orderId}` path parameters;
+these are heuristic candidates, not confirmed vulnerabilities.
 
 ---
 

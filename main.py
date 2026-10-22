@@ -9,6 +9,7 @@ from reports.generator import ReportGenerator
 from reports.html_generator import generate_html_report
 from reports.json_generator import generate_json_report
 from core.openapi_parser import extract_operations, load_openapi_json
+from core.bola_discovery import discover_bola_candidates
 
 init(autoreset=True)
 
@@ -42,11 +43,13 @@ def main():
     args = get_arguments()
     spec = None
     operations = []
+    bola_candidates = []
 
     if args.openapi:
         try:
             spec = load_openapi_json(args.openapi)
             operations = extract_operations(spec)
+            bola_candidates = discover_bola_candidates(operations)
         except (OSError, ValueError) as error:
             print(Fore.RED + f"[-] Não foi possível carregar a especificação: {error}")
             sys.exit(2)
@@ -54,15 +57,27 @@ def main():
         if not args.url:
             if not operations:
                 print(Fore.YELLOW + "[!] Nenhuma operação encontrada na especificação.")
-                return
+            else:
+                print(Fore.CYAN + "[*] Operações encontradas na especificação OpenAPI:")
+                for operation in operations:
+                    print(f"{operation['method']} {operation['path']}")
 
-            print(Fore.CYAN + "[*] Operações encontradas na especificação OpenAPI:")
-            for operation in operations:
-                print(f"{operation['method']} {operation['path']}")
+            print(Fore.CYAN + f"[+] BOLA candidates discovered: {len(bola_candidates)}")
+            for candidate in bola_candidates:
+                print(
+                    f"{candidate['confidence']} "
+                    f"{candidate['method']} {candidate['path_template']}"
+                )
             return
 
         print(Fore.GREEN + "[+] OpenAPI loaded.")
         print(Fore.CYAN + f"[+] Operations discovered: {len(operations)}")
+        print(Fore.CYAN + f"[+] BOLA candidates discovered: {len(bola_candidates)}")
+        for candidate in bola_candidates:
+            print(
+                f"{candidate['confidence']} "
+                f"{candidate['method']} {candidate['path_template']}"
+            )
 
     if args.url:
 
