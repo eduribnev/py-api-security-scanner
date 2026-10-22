@@ -60,6 +60,8 @@ def generate_json_report(
     header_findings,
     bola_findings,
     output_file="security_report.json",
+    bola_candidates=None,
+    assessment_plans=None,
 ):
     summary = _calculate_findings_counts(header_findings, bola_findings)
     score = _calculate_security_score(summary)
@@ -74,6 +76,12 @@ def generate_json_report(
         "summary": summary,
         "header_findings": header_findings,
         "data_exposure_findings": bola_findings,
+        "bola_candidates": bola_candidates if bola_candidates is not None else [],
+        "assessment_plans": assessment_plans if assessment_plans is not None else [],
+        "assessment_notice": (
+            "Candidates and assessment plans are informational only and are not "
+            "confirmed vulnerabilities."
+        ),
     }
 
     with open(output_file, "w", encoding="utf-8") as report_file:
