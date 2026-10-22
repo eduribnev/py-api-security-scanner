@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Compile required Python files
+        run: |
+          python -m py_compile \
+            main.py \
+            core/openapi_parser.py \
+            core/bola_discovery.py \
+            core/assessment_planner.py \
+            scanners/headers_scanner.py \
+            reports/html_generator.py \
+            reports/json_generator.py \
+            reports/generator.py
