@@ -82,6 +82,16 @@ def main():
                     print(test_id)
 
             report_target = f"OpenAPI specification: {args.openapi}"
+            markdown_reporter = ReportGenerator(
+                report_target,
+                [],
+                [],
+                bola_candidates=bola_candidates,
+                assessment_plans=assessment_plans,
+            )
+            markdown_report = markdown_reporter.generate_markdown(
+                "relatorio_seguranca.md"
+            )
             html_report = generate_html_report(
                 report_target,
                 [],
@@ -96,6 +106,7 @@ def main():
                 bola_candidates=bola_candidates,
                 assessment_plans=assessment_plans,
             )
+            print(Fore.MAGENTA + f"\n[📄] Markdown Report: {markdown_report}")
             print(Fore.MAGENTA + f"\n[🌐] HTML Report: {html_report}")
             print(Fore.MAGENTA + f"[📦] JSON Report: {json_report}")
             return
@@ -180,7 +191,13 @@ def main():
             }
         )
 
-    reporter = ReportGenerator(target_url, header_findings, bola_findings)
+    reporter = ReportGenerator(
+        target_url,
+        header_findings,
+        bola_findings,
+        bola_candidates=bola_candidates,
+        assessment_plans=assessment_plans,
+    )
     report_file = reporter.generate_markdown("relatorio_seguranca.md")
 
     html_report = generate_html_report(
