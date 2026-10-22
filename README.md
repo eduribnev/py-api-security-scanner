@@ -1,340 +1,193 @@
-# 🛡️ API Sentinel Scanner
+# API Sentinel Scanner
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)]()
-[![OWASP API Security](https://img.shields.io/badge/OWASP-API%20Security-red.svg)]()
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![CI](https://github.com/eduribnev/py-api-security-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/eduribnev/py-api-security-scanner/actions/workflows/ci.yml)
+[![Python 3.14](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-JSON%20%7C%20YAML-6BA539.svg)](https://www.openapis.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-API Sentinel Scanner is an automated security assessment tool designed to identify common vulnerabilities in REST APIs based on the OWASP API Security Top 10.
+API Sentinel Scanner is a learning-oriented AppSec tool for inspecting HTTP security headers and analyzing OpenAPI-described API routes. It can identify heuristic BOLA candidates and generate informational assessment plans; these are not proof of vulnerabilities.
 
-The project helps developers, security analysts, AppSec professionals, and DevSecOps teams quickly discover security weaknesses such as misconfigured HTTP security headers, sensitive data exposure, and Broken Object Level Authorization (BOLA) issues.
+## Project Status
 
----
+This project is under active development and is suitable for local labs, demonstrations, and experimentation. The GitHub Actions workflow installs dependencies and compiles selected Python files with Python 3.14; it does not run a functional test suite.
 
-## 🚀 Key Features
+| Capability | Status |
+| --- | --- |
+| Security header checks | Implemented |
+| OpenAPI JSON and YAML parsing | Implemented |
+| OpenAPI-driven security header scanning | Implemented |
+| BOLA candidate discovery | Heuristic and informational |
+| BOLA assessment planning | Informational; not executed |
+| HTML and JSON reports | Implemented |
+| Markdown report generation | Implemented; OpenAPI candidates and plans are not yet wired into the CLI-generated Markdown report |
+| Identity-based BOLA confirmation | Not implemented |
 
-### 🔍 Security Headers Audit
+## Overview
 
-Automatically detects missing or insecure HTTP security headers, including:
+The scanner supports two OpenAPI workflows:
 
-- Strict-Transport-Security (HSTS)
-- Content-Security-Policy (CSP)
-- X-Frame-Options
-- X-Content-Type-Options
-- Access-Control-Allow-Origin misconfigurations
+- **Specification analysis:** parse a local OpenAPI document, list operations, discover BOLA candidates, create assessment plans, and produce HTML and JSON reports without making requests to the API.
+- **Header scanning with OpenAPI:** send requests to static GET paths discovered in a local specification and collect security-header findings.
 
----
+The project also includes a deliberately vulnerable Flask API for local learning and demonstrations.
 
-### 🔐 BOLA Detection
+## Features
 
-Tests APIs for:
+- Checks responses for missing `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Frame-Options`, and `Content-Security-Policy` headers.
+- Flags a wildcard `Access-Control-Allow-Origin` response header.
+- Loads OpenAPI specifications from JSON and YAML files.
+- Selects static GET operations from an OpenAPI document for header scanning; parameterized routes and non-GET operations are excluded from that header scan.
+- Identifies heuristic BOLA candidates when a path parameter is named `{id}`, `{userId}`, `{accountId}`, or `{orderId}`.
+- Creates assessment plans with status `NOT_TESTED`, illustrative IDs, and an approval-required indicator. Plans do not execute tests.
+- Generates HTML, JSON, and Markdown reports. OpenAPI candidates and plans are currently passed to the HTML and JSON generators; the CLI does not yet pass them to Markdown generation.
 
-- Unauthorized object access
-- ID enumeration vulnerabilities
-- Broken Object Level Authorization (OWASP API1)
+## Security and Scope Notes
 
-Example:
+- Use the scanner only against systems you own or are explicitly authorized to assess. The `--url` workflows send HTTP requests to the target.
+- BOLA candidates are based on path-parameter names. They are leads for review, not confirmed vulnerabilities.
+- Assessment-plan IDs such as `1` and `2` are illustrative and are not checked against the target.
+- This version does not perform identity-based authorization comparisons and cannot confirm BOLA.
+- The legacy URL-only workflow includes hard-coded demonstration entries in its data-exposure report section. Do not interpret those entries as target-validated findings.
+- Run the included vulnerable API only in a controlled local environment.
 
-```http
-GET /users/1
-GET /users/2
-GET /users/3
-```
-
-The scanner checks whether sensitive information can be accessed without proper authorization controls.
-
----
-
-### 🧬 Sensitive Data Exposure Detection
-
-Identifies potentially exposed fields such as:
-
-- password
-- password_hash
-- cpf
-- ssn
-- token
-- api_key
-- secret_key
-
----
-
-### 📝 Automated Security Reports
-
-Generates structured Markdown reports containing:
-
-- Vulnerability description
-- Severity level
-- Affected endpoint
-- Findings summary
-- Remediation recommendations
-
----
-
-### 🧪 Integrated Testing Environment
-
-Includes a deliberately vulnerable Flask API that allows users to test scanner capabilities in a controlled environment.
-
-Perfect for:
-
-- Security learning
-- Demonstrations
-- Workshops
-- Portfolio projects
-- AppSec labs
-
----
-
-# 🏗️ Architecture
-
-```text
-api-sentinel-scanner/
-│
-├── core/
-│   ├── __init__.py
-│   └── requester.py
-│
-├── scanners/
-│   ├── __init__.py
-│   ├── headers_scanner.py
-│   └── bola_scanner.py
-│
-├── reports/
-│   ├── __init__.py
-│   └── generator.py
-│
-├── tests/
-│   └── mock_api.py
-│
-├── main.py
-├── requirements.txt
-└── relatorio_seguranca.md
-```
-
----
-
-# ⚙️ Installation
-
-Clone the repository:
+## Installation
 
 ```bash
 git clone https://github.com/eduribnev/py-api-security-scanner.git
+cd py-api-security-scanner
+python -m venv .venv
 ```
 
-Navigate to the project directory:
+Activate the virtual environment:
 
 ```bash
-cd py-api-security-scanner
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+
+# Linux or macOS
+source .venv/bin/activate
 ```
 
 Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
----
+## Quick Start
 
-# 🚦 Quick Start
+### 1. Start the local demonstration API
 
-### 1. Start the vulnerable API
+In one terminal:
 
 ```bash
 python tests/mock_api.py
 ```
 
-The API will be available locally.
+The demo API listens at `http://127.0.0.1:5000`.
 
----
+### 2. Analyze an OpenAPI specification without API requests
 
-### 2. Run the Scanner
+In another terminal:
 
 ```bash
-python main.py
+python main.py --openapi test_openapi.json
 ```
 
----
+This parses the specification and creates `security_report.html` and `security_report.json`. This mode does not create the Markdown report.
 
-### 3. Review the Report
+### 3. Scan static GET paths for security headers
 
-After the scan completes, a Markdown report will be generated:
+Use a local API or another explicitly authorized target:
 
-```text
-relatorio_seguranca.md
+```bash
+python main.py --url http://127.0.0.1:5000 --openapi test_openapi.json
 ```
 
-To scan a specific API URL, pass it with `--url`:
+The scanner sends requests to static GET paths in the specification. The legacy URL-only mode is also available:
 
 ```bash
 python main.py --url http://127.0.0.1:5000
 ```
 
-To scan static GET endpoints from an OpenAPI or Swagger JSON/YAML
-specification, pass both the target base URL and the specification file:
+That mode sends requests to the target and uses legacy demonstration data in its data-exposure report section; see [Security and Scope Notes](#security-and-scope-notes).
+
+## Supported OpenAPI Formats
+
+The `--openapi` option accepts a local file with one of these extensions:
+
+| Format | Example |
+| --- | --- |
+| JSON | `openapi.json` |
+| YAML | `openapi.yaml` |
+| YAML | `swagger.yaml` |
+| YAML | `swagger.yml` |
+
+Example:
 
 ```bash
-python main.py --url http://127.0.0.1:5000 --openapi test_openapi.json
-python main.py --url http://127.0.0.1:5000 --openapi openapi.yaml
-python main.py --url http://127.0.0.1:5000 --openapi swagger.yml
+python main.py --openapi test_openapi.yaml
 ```
 
-Parameterized paths and non-GET operations are excluded from the security
-headers scan. Passing only `--openapi` lists the discovered operations and
-potential BOLA candidates without sending requests. Candidate detection
-recognizes `{id}`, `{userId}`, `{accountId}`, and `{orderId}` path parameters;
-these are heuristic candidates, not confirmed vulnerabilities.
-Supported specification extensions are `.json`, `.yaml`, and `.yml`.
+The YAML parser uses PyYAML's safe loader. OpenAPI operations are extracted from the parsed document and then passed to discovery and reporting.
 
----
+## Reports
 
-## Sample HTML Report
+| Report | Output file | Contents |
+| --- | --- | --- |
+| HTML | `security_report.html` | Header findings, OpenAPI BOLA candidates, and assessment plans |
+| JSON | `security_report.json` | Structured header findings, candidates, and plans |
+| Markdown | `relatorio_seguranca.md` | Header and legacy data-exposure sections; OpenAPI candidate and plan data is not yet wired through the CLI |
 
-The scanner also generates an HTML report named `security_report.html`. The report includes an executive summary, findings by severity, and detailed security header and authorization/data exposure findings.
+Candidates and assessment plans are informational data, separate from confirmed findings. This project does not currently confirm BOLA through testing across multiple identities.
 
-![Sample API Sentinel HTML report](docs/report-preview.png)
+## Architecture
 
-### Security Score
-
-The Security Score starts at 100 and is reduced according to the severity and number of findings. Critical findings deduct 15 points each, high findings 5 points, medium findings 3 points, and low findings 1 point. The score cannot go below 0.
-
-### Risk Level
-
-The Risk Level is calculated from the Security Score:
-
-| Score | Risk Level |
-|------:|------------|
-| 80–100 | LOW |
-| 60–79 | MEDIUM |
-| 40–59 | HIGH |
-| 0–39 | CRITICAL |
-
----
-
-# 📊 Sample Findings
-
-| Finding | Severity |
-|----------|----------|
-| Missing HSTS Header | High |
-| Missing CSP Header | Medium |
-| Data Exposure | High |
-| BOLA Vulnerability | Critical |
-
----
-
-# 🎯 Use Cases
-
-### Application Security (AppSec)
-
-Quick validation of REST APIs during development.
-
-### DevSecOps Pipelines
-
-Can be integrated into CI/CD workflows to identify security issues earlier.
-
-### Security Training
-
-Ideal for laboratory environments and OWASP-focused learning.
-
-### Portfolio Demonstrations
-
-Showcase practical security testing and automated vulnerability analysis.
-
----
-
-# 🔥 OWASP API Security Coverage
-
-Current focus:
-
-| OWASP Category | Status |
-|---------------|---------|
-| API1: Broken Object Level Authorization | ✅ |
-| API3: Broken Object Property Level Authorization | 🔄 Planned |
-| API8: Security Misconfiguration | ✅ |
-| Sensitive Data Exposure | ✅ |
-
----
-
-# 🛣️ Roadmap
-
-## Version 1.1
-
-- [ ] HTML Reports
-- [ ] JSON Reports
-- [ ] Severity Scoring
-
-## Version 1.5
-
-- [ ] Docker Support
-- [ ] GitHub Actions CI/CD
-- [ ] CLI Arguments
-
-## Version 2.0
-
-- [ ] OpenAPI / Swagger Import
-- [ ] JWT Security Assessment
-- [ ] Rate Limiting Validation
-- [ ] Authentication Testing
-
----
-
-# 📈 Future Enhancements
-
-Planned advanced capabilities include:
-
-- OpenAPI specification parsing
-- JWT vulnerabilities assessment
-- API endpoint discovery
-- Security scoring engine
-- Interactive dashboard
-- Risk classification system
-
----
-
-# 🤝 Contributing
-
-Contributions are welcome.
-
-If you would like to improve the scanner, feel free to:
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Submit a Pull Request
-
----
-
-# 📜 License
-
-This project is licensed under the MIT License.
-
----
-
-# 👨‍💻 Author
-
-**Eduardo Ribeiro das Neves**
-
-Information Security Technologist | Cybersecurity Enthusiast | Automation Specialist
-
-GitHub:
-https://github.com/eduribnev
-
----
-
-## ⭐ Support the Project
-
-If you find this project useful, consider giving it a star.
-
-Your support helps improve the project and encourages further development.
-
-## 🐳 Docker Support
-
-Build the image:
-
-```bash
-docker build -t api-sentinel .
+```text
+CLI (main.py)
+├── OpenAPI workflow
+│   ├── core/openapi_parser.py
+│   ├── core/bola_discovery.py
+│   └── core/assessment_planner.py
+├── Request workflow
+│   ├── core/requester.py
+│   ├── scanners/headers_scanner.py
+│   └── scanners/bola_scanner.py (legacy exploratory checks)
+└── Reports
+    ├── reports/html_generator.py
+    ├── reports/json_generator.py
+    └── reports/generator.py (Markdown)
 ```
 
-Run the scanner:
+- **OpenAPI parser:** loads JSON/YAML documents and extracts HTTP operations.
+- **BOLA discovery:** classifies routes with recognized resource-identifier parameter names as candidates.
+- **Assessment planner:** creates non-executed assessment plans.
+- **Header scanner:** evaluates response headers received from requests.
+- **Report generators:** render findings and, for HTML/JSON, OpenAPI candidates and assessment plans.
 
-```bash
-docker run -it api-sentinel
-```
+## CI
+
+The [GitHub Actions workflow](.github/workflows/ci.yml) runs on `push` and `pull_request`. It uses Python 3.14, installs `requirements.txt`, and runs `py_compile` on the selected application modules. This checks dependency installation and Python syntax; it does not validate runtime behavior or replace functional tests.
+
+## Roadmap
+
+- [ ] Add functional tests for JSON/YAML parsing, candidate discovery, plans, and report output.
+- [ ] Pass OpenAPI BOLA candidates and assessment plans through to the CLI-generated Markdown report.
+- [ ] Replace demonstration BOLA report data with findings derived from actual, documented assessment evidence.
+- [ ] Design safe, authorized, identity-based BOLA assessment workflows before claiming BOLA confirmation.
+- [ ] Expand CI to run functional tests and define a tested Python-version support matrix.
+- [ ] Review Docker usage and document a verified local workflow.
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss significant changes before submitting a pull request. Keep security claims evidence-based, add or update tests for behavior changes, and document changes to CLI options or report formats.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## Author
+
+**Eduardo Ribeiro das Neves**  
+Information Security Technologist | Cybersecurity Enthusiast | Automation Specialist  
+[GitHub](https://github.com/eduribnev)
