@@ -8,7 +8,7 @@ from scanners.bola_scanner import BOLAandDataLeakScanner
 from reports.generator import ReportGenerator
 from reports.html_generator import generate_html_report
 from reports.json_generator import generate_json_report
-from core.openapi_parser import extract_operations, load_openapi_json
+from core.openapi_parser import extract_operations, load_openapi_document
 from core.bola_discovery import discover_bola_candidates
 from core.assessment_planner import generate_assessment_plans
 
@@ -32,7 +32,7 @@ def get_arguments():
     parser.add_argument("--url", help="Target API base URL")
     parser.add_argument(
         "--openapi",
-        help="Path to an OpenAPI or Swagger specification in JSON format",
+        help="Path to an OpenAPI or Swagger specification in JSON or YAML format",
     )
 
     return parser.parse_args()
@@ -49,7 +49,7 @@ def main():
 
     if args.openapi:
         try:
-            spec = load_openapi_json(args.openapi)
+            spec = load_openapi_document(args.openapi)
             operations = extract_operations(spec)
             bola_candidates = discover_bola_candidates(operations)
             assessment_plans = generate_assessment_plans(bola_candidates)

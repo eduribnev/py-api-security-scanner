@@ -168,11 +168,13 @@ To scan a specific API URL, pass it with `--url`:
 python main.py --url http://127.0.0.1:5000
 ```
 
-To scan the static GET endpoints from an OpenAPI JSON specification, pass both
-the target base URL and the specification file:
+To scan static GET endpoints from an OpenAPI or Swagger JSON/YAML
+specification, pass both the target base URL and the specification file:
 
 ```bash
 python main.py --url http://127.0.0.1:5000 --openapi test_openapi.json
+python main.py --url http://127.0.0.1:5000 --openapi openapi.yaml
+python main.py --url http://127.0.0.1:5000 --openapi swagger.yml
 ```
 
 Parameterized paths and non-GET operations are excluded from the security
@@ -180,6 +182,7 @@ headers scan. Passing only `--openapi` lists the discovered operations and
 potential BOLA candidates without sending requests. Candidate detection
 recognizes `{id}`, `{userId}`, `{accountId}`, and `{orderId}` path parameters;
 these are heuristic candidates, not confirmed vulnerabilities.
+Supported specification extensions are `.json`, `.yaml`, and `.yml`.
 
 ---
 
