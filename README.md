@@ -1,9 +1,10 @@
 # API Sentinel Scanner
 
 [![CI](https://github.com/eduribnev/py-api-security-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/eduribnev/py-api-security-scanner/actions/workflows/ci.yml)
-[![Python 3.14](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
-[![OpenAPI](https://img.shields.io/badge/OpenAPI-JSON%20%7C%20YAML-6BA539.svg)](https://www.openapis.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python 3.14](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/)
+[![OpenAPI JSON](https://img.shields.io/badge/OpenAPI-JSON-6BA539.svg)](https://www.openapis.org/)
+[![OpenAPI YAML](https://img.shields.io/badge/OpenAPI-YAML-6BA539.svg)](https://www.openapis.org/)
 
 API Sentinel Scanner is a learning-oriented AppSec tool for inspecting HTTP security headers and analyzing OpenAPI-described API routes. It can identify heuristic BOLA candidates and generate informational assessment plans; these are not proof of vulnerabilities.
 
