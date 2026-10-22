@@ -229,12 +229,54 @@ def _render_data_exposure_rows(bola_findings):
     return "\n".join(rows)
 
 
+def _render_bola_candidate_rows(bola_candidates):
+    if not bola_candidates:
+        return '<tr><td colspan="3">No OpenAPI BOLA candidates discovered.</td></tr>'
+
+    rows = []
+    for candidate in bola_candidates:
+        rows.append(
+            "<tr>"
+            f"<td>{escape(str(candidate.get('method', 'N/A')))}</td>"
+            f"<td>{escape(str(candidate.get('path_template', 'N/A')))}</td>"
+            f"<td>{escape(str(candidate.get('confidence', 'N/A')))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def _render_assessment_plan_rows(assessment_plans):
+    if not assessment_plans:
+        return '<tr><td colspan="5">No assessment plans generated.</td></tr>'
+
+    rows = []
+    for plan in assessment_plans:
+        suggested_test_ids = plan.get("suggested_test_ids", [])
+        if not isinstance(suggested_test_ids, list):
+            suggested_test_ids = [suggested_test_ids]
+
+        rows.append(
+            "<tr>"
+            f"<td>{escape(str(plan.get('method', 'N/A')))}</td>"
+            f"<td>{escape(str(plan.get('candidate', 'N/A')))}</td>"
+            f"<td>{escape(str(plan.get('assessment_status', 'N/A')))}</td>"
+            f"<td>{escape(', '.join(str(value) for value in suggested_test_ids))}</td>"
+            f"<td>{escape(str(plan.get('approval_required', 'N/A')))}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
 def generate_html_report(
     target_url,
     header_findings,
     bola_findings,
     output_file="security_report.html",
+    bola_candidates=None,
+    assessment_plans=None,
 ):
+    bola_candidates = bola_candidates if bola_candidates is not None else []
+    assessment_plans = assessment_plans if assessment_plans is not None else []
     counts = _calculate_findings_counts(header_findings, bola_findings)
     score = _calculate_security_score(counts)
     risk_level = _get_risk_level(score)
@@ -255,6 +297,9 @@ def generate_html_report(
         <h1>API Sentinel Scanner</h1>
         <p class="metadata"><strong>Target:</strong> {escape(str(target_url))}</p>
         <p class="metadata"><strong>Generated on:</strong> {escape(generated_at)}</p>
+        <p class="metadata">
+            Candidates and assessment plans are informational only and are not confirmed vulnerabilities.
+        </p>
 
         <section aria-labelledby="score-heading">
             <h2 id="score-heading">Security Score</h2>
@@ -316,6 +361,44 @@ def generate_html_report(
                     </thead>
                     <tbody>
                         {_render_data_exposure_rows(bola_findings)}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section aria-labelledby="bola-candidates-heading">
+            <h2 id="bola-candidates-heading">OpenAPI BOLA Candidates</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col">Path Template</th>
+                            <th scope="col">Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {_render_bola_candidate_rows(bola_candidates)}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section aria-labelledby="assessment-plans-heading">
+            <h2 id="assessment-plans-heading">Assessment Plans</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Method</th>
+                            <th scope="col">Candidate</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Suggested Test IDs</th>
+                            <th scope="col">Approval Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {_render_assessment_plan_rows(assessment_plans)}
                     </tbody>
                 </table>
             </div>

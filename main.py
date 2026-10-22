@@ -10,6 +10,7 @@ from reports.html_generator import generate_html_report
 from reports.json_generator import generate_json_report
 from core.openapi_parser import extract_operations, load_openapi_json
 from core.bola_discovery import discover_bola_candidates
+from core.assessment_planner import generate_assessment_plans
 
 init(autoreset=True)
 
@@ -44,12 +45,14 @@ def main():
     spec = None
     operations = []
     bola_candidates = []
+    assessment_plans = []
 
     if args.openapi:
         try:
             spec = load_openapi_json(args.openapi)
             operations = extract_operations(spec)
             bola_candidates = discover_bola_candidates(operations)
+            assessment_plans = generate_assessment_plans(bola_candidates)
         except (OSError, ValueError) as error:
             print(Fore.RED + f"[-] Não foi possível carregar a especificação: {error}")
             sys.exit(2)
@@ -68,6 +71,33 @@ def main():
                     f"{candidate['confidence']} "
                     f"{candidate['method']} {candidate['path_template']}"
                 )
+            print(Fore.CYAN + f"[+] Assessment plans generated: {len(assessment_plans)}")
+            for plan in assessment_plans:
+                print(
+                    f"\nCandidate:\n{plan['method']} {plan['candidate']}"
+                    f"\n\nStatus:\n{plan['assessment_status']}"
+                    "\n\nSuggested Test IDs:"
+                )
+                for test_id in plan["suggested_test_ids"]:
+                    print(test_id)
+
+            report_target = f"OpenAPI specification: {args.openapi}"
+            html_report = generate_html_report(
+                report_target,
+                [],
+                [],
+                bola_candidates=bola_candidates,
+                assessment_plans=assessment_plans,
+            )
+            json_report = generate_json_report(
+                report_target,
+                [],
+                [],
+                bola_candidates=bola_candidates,
+                assessment_plans=assessment_plans,
+            )
+            print(Fore.MAGENTA + f"\n[🌐] HTML Report: {html_report}")
+            print(Fore.MAGENTA + f"[📦] JSON Report: {json_report}")
             return
 
         print(Fore.GREEN + "[+] OpenAPI loaded.")
@@ -153,8 +183,20 @@ def main():
     reporter = ReportGenerator(target_url, header_findings, bola_findings)
     report_file = reporter.generate_markdown("relatorio_seguranca.md")
 
-    html_report = generate_html_report(target_url, header_findings, bola_findings)
-    json_report = generate_json_report(target_url, header_findings, bola_findings)
+    html_report = generate_html_report(
+        target_url,
+        header_findings,
+        bola_findings,
+        bola_candidates=bola_candidates,
+        assessment_plans=assessment_plans,
+    )
+    json_report = generate_json_report(
+        target_url,
+        header_findings,
+        bola_findings,
+        bola_candidates=bola_candidates,
+        assessment_plans=assessment_plans,
+    )
 
     print(Fore.MAGENTA + f"\n[📄] Markdown Report: {report_file}")
     print(Fore.MAGENTA + f"[🌐] HTML Report: {html_report}")
